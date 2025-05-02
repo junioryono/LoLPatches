@@ -43,14 +43,17 @@ def fetch_patch_schedule():
             raise Exception("Couldn't find patch schedule table")
         
         patch_schedule = []
+        patch_counter = 1  # Initialize counter for patch numbers
         
         # Parse table rows
         for row in table.find_all('tr')[1:]:  # Skip header row
             cells = row.find_all(['td', 'th'])
             if len(cells) >= 2:
-                # Extract patch number directly from the table
-                patch = cells[0].get_text().strip()
                 date_str = cells[1].get_text().strip()
+                
+                # Create new patch number format (15.1, 15.2, etc.)
+                patch = f"15.{patch_counter}"
+                patch_counter += 1
                 
                 # Extract date and handle cases with "(Thursday)" notation
                 date_str = re.sub(r'\s*\([^)]*\)', '', date_str).strip()
@@ -95,8 +98,10 @@ def create_patch_data():
         utc_date = pacific_date.astimezone(pytz.UTC)
         timestamp = int(utc_date.timestamp())
         
-        # Include all patches for the current year
-        # Remove the filter for future patches to include the full schedule
+        # Skip future patches
+        if timestamp > current_time:
+            continue
+        
         patches.append({
             'name': patch,
             'start': timestamp
